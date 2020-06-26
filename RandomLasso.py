@@ -17,9 +17,12 @@ regression techniques as the ratio of features to samples increases.
 import numpy as np
 
 
-def RandomLasso(x, y, bootstraps=None, alpha=None, box_width=None,
+def random_lasso(x, y, bootstraps=None, alpha=None, box_width=None,
                 nfold=None, verbose=True, verbose_output=True):
+    number_of_samples = x.shape[0]
+    number_of_features = x.shape[1]
+    assert number_of_samples == y.shape[0], \
+        "Error: Number of features in x is not equal to the length of y."
 
-    print("Hello Random Lasso")
-    weights = np.zeros((x.shape[1]))
+    weights = np.zeros((number_of_features, 1))
     return weights
