@@ -44,6 +44,7 @@ def random_lasso(x, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], box_
 
     weights = np.zeros((bootstraps, number_of_features))
 
+    print(" ------ PART 1 ------ ")
     for ii in range(bootstraps):
         random_features = np.random.choice(all_feature_indices, number_of_samples, replace=False)
         shuffled_samples = np.random.choice(all_sample_indices, number_of_samples, replace=True)
@@ -51,12 +52,30 @@ def random_lasso(x, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], box_
         new_x = new_x[shuffled_samples, :]
         new_y = y[shuffled_samples]  # Valid
 
-        #norm_x = (new_x - np.mean(new_x, axis=0)) / np.std(new_x, axis=0)  #NV
-        #norm_y = (new_y - np.mean(new_y))  # NV
+        norm_x = (new_x - np.mean(new_x, axis=0)) / np.std(new_x, axis=0)  #NV
+        norm_y = (new_y - np.mean(new_y))  # NV
 
-        reg = linear_model.LassoCV(normalize=True).fit(x, y)
-        weights[ii, :] = reg.coef_
+        reg = linear_model.LassoCV(fit_intercept=False).fit(norm_x, norm_y)  # NV
+        weights[ii, random_features] = reg.coef_  # Valid
 
     importance_measure = np.sum(np.abs(weights), axis=0)
+    probability_distribution = importance_measure / np.sum(importance_measure)
 
-    return importance_measure
+    print(" ------ PART 2 ------ ")
+    for ii in range(bootstraps):
+        random_features = np.random.choice(all_feature_indices, number_of_samples, replace=False,
+                                           p=probability_distribution)
+        shuffled_samples = np.random.choice(all_sample_indices, number_of_samples, replace=True)
+        new_x = x[:, random_features]  # Valid
+        new_x = new_x[shuffled_samples, :]
+        new_y = y[shuffled_samples]  # Valid
+
+        norm_x = (new_x - np.mean(new_x, axis=0)) / np.std(new_x, axis=0)  # NV
+        norm_y = (new_y - np.mean(new_y))  # NV
+
+        reg = linear_model.LassoCV(fit_intercept=False).fit(norm_x, norm_y)  # NV
+        weights[ii, random_features] = reg.coef_  # Valid
+
+    weights = np.sum(weights, axis=0) / bootstraps
+
+    return weights

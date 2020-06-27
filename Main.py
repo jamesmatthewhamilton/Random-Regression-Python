@@ -7,18 +7,18 @@ from sklearn import linear_model
 
 def main():
     tests = 1
-    start_samples = 50
-    start_features = 100
+    start_samples = 100
+    start_features = 1000
     start_informative = 10
+
     rmse = np.zeros(tests)
-    weights = np.zeros(tests)
 
     for ii in range(tests):
         x, y, ground_truth = make_regression(n_samples=start_samples, n_features=start_features, #* (ii + 1),
                                              n_informative=start_informative, coef=True)
         print("Ground Truth:\n", ground_truth.T)
 
-        reg = linear_model.LassoCV(normalize=True).fit(x, y)
+        reg = linear_model.LassoCV().fit(x, y)
         print("Pure Lasso Prediction:\n", reg.coef_)
         weights_t = mean_squared_error(reg.coef_, ground_truth)
         print("Pure Lasso RME: ", weights_t)
