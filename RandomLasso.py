@@ -16,6 +16,7 @@ regression techniques as the ratio of features to samples increases.
 """
 
 import numpy as np
+from sklearn import linear_model
 
 
 def random_lasso(x, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], box_width=None,
@@ -41,19 +42,21 @@ def random_lasso(x, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], box_
     all_feature_indices = np.arange(number_of_features)
     all_sample_indices = np.arange(number_of_samples)
 
+    weights = np.zeros((bootstraps, number_of_features))
+
     for ii in range(bootstraps):
         random_features = np.random.choice(all_feature_indices, number_of_samples, replace=False)
         shuffled_samples = np.random.choice(all_sample_indices, number_of_samples, replace=True)
-        new_x = x[:, random_features]
+        new_x = x[:, random_features]  # Valid
         new_x = new_x[shuffled_samples, :]
-        new_y = y[shuffled_samples]
+        new_y = y[shuffled_samples]  # Valid
 
-    print(new_x.shape)
-    print(new_y.shape)
-    print("index features \n", random_features)
-    print("index samples \n", shuffled_samples)
-    print("random features \n", new_x)
-    print("shuffled samples \n", new_y)
+        #norm_x = (new_x - np.mean(new_x, axis=0)) / np.std(new_x, axis=0)  #NV
+        #norm_y = (new_y - np.mean(new_y))  # NV
 
-    weights = np.zeros((number_of_features, 1))
-    return weights
+        reg = linear_model.LassoCV(normalize=True).fit(x, y)
+        weights[ii, :] = reg.coef_
+
+    importance_measure = np.sum(np.abs(weights), axis=0)
+
+    return importance_measure
