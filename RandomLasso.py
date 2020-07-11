@@ -37,17 +37,20 @@ def random_lasso(x, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], samp
         ", but bootstraps overwrites expected_sampling\n" \
         "Hint: Only one of these two parameters should be set."
 
+    # Calculating bootstraps when user does not specify.
     if bootstraps is None:
         bootstraps = int(np.ceil(number_of_features / number_of_samples) * expected_sampling)
+    # Setting sample size when user does not specify.
     if sample_size is None:
         sample_size = number_of_samples
 
     print(" ------ PART 1 ------ ")
-    weights = bootstrap_xy(x, y, bootstraps=bootstraps, sample_size=sample_size)
-    importance_measure = np.sum(np.abs(weights), axis=0)
-    probability_distribution = importance_measure / np.sum(importance_measure)
+    bootstrap_matrix = bootstrap_xy(x, y, bootstraps=bootstraps, sample_size=sample_size)
+    weights = np.sum(np.abs(bootstrap_matrix), axis=0)
+    probability_distribution = weights / np.sum(weights)
 
     print(" ------ PART 2 ------ ")
+    # Using the results of the weights from Part 1 in our random sampling.
     weights = bootstrap_xy(x, y, bootstraps=bootstraps, sample_size=sample_size,
                            probabilities=probability_distribution)
     weights = np.sum(weights, axis=0) / bootstraps
@@ -59,21 +62,28 @@ def bootstrap_xy(x, y, bootstraps, sample_size, probabilities=None):
     number_of_samples = x.shape[0]
     number_of_features = x.shape[1]
 
-    all_feature_indices = np.arange(number_of_features)
-    all_sample_indices = np.arange(number_of_samples)
-    bootstrap_matrix = np.zeros((bootstraps, number_of_features))
+    all_feature_indices = np.arange(number_of_features)  # 0, 1, 2 ... #features
+    all_sample_indices = np.arange(number_of_samples)  # 0, 1, 2, ... #samples
+    bootstrap_matrix = np.zeros((bootstraps, number_of_features))  # (bootstraps x features)
 
     for ii in range(bootstraps):
-        random_features = np.random.choice(all_feature_indices, sample_size, replace=False, p=probabilities)
-        shuffled_samples = np.random.choice(all_sample_indices, sample_size, replace=True)
+        # Randomly sampling sample_size number of feature indices.
+        random_features = np.random.choice(all_feature_indices, size=sample_size, replace=False, p=probabilities)
+        # Randomly shuffling and duplicating sample_size number of sample indices.
+        shuffled_samples = np.random.choice(all_sample_indices, size=sample_size, replace=True)
+
+        # Generating a new X and y based on the above random indices.
         new_x = x[:, random_features]  # Valid
         new_x = new_x[shuffled_samples, :]  # Valid
         new_y = y[shuffled_samples]  # Valid
 
+        # Standardizing the new X and y.
         norm_y = (new_y - np.mean(new_y))  # NV
         norm_x = (new_x - np.mean(new_x, axis=0)) / np.std(new_x, axis=0)  # NV
 
-        reg = linear_model.LassoCV(fit_intercept=False).fit(norm_x, norm_y)  # NV
+        # Running some flavor of regression. Uses k-fold cross validation to tune hyper-parameter.
+        reg = linear_model.LassoCV(fit_intercept=False).fit(norm_x, norm_y)  # BUG HERE: "ConvergenceWarning"
+        # Adding to large bootstrap matrix. Will get the sum of each column later.
         bootstrap_matrix[ii, random_features] = reg.coef_  # Valid
 
     return bootstrap_matrix

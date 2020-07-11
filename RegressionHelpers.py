@@ -1,25 +1,51 @@
 import numpy as np
+from sklearn import linear_model
 
-def ridge_fit_closed(X, y, llambda):
+
+def ridge_cv(X, y, nfold=5):
     """
     Args:
-        X: N x D numpy array, where N is number of instances and D is the dimensionality of each instance
-        y: N x 1 numpy array, the true labels
-        llambda: floating number
+        X: n x p numpy array, where n is number of instances and p is the number of features.
+        y: n x 1 numpy array, the true labels.
+        llambda: floating number.
     Return:
-        weights: Dx1 numpy array, the weights of lasso
+        weights: dx1 numpy array, the weights of ridge.
     """
-    weights = np.dot(np.dot(np.linalg.inv((np.dot(X.T, X)) + (llambda * np.identity(X.shape[1]))), X.T), y)
-    return weights
+    return None
 
 
-def adaptive_lasso(X, y, penalty):
+def lasso_cv(X, y, nfold=5):
     """
     Args:
-        X: N x D numpy array, where N is number of instances and D is the dimensionality of each instance
-        y: N x 1 numpy array, the true labels
-        penalty: precomputed penalty factor
+        X: n x p numpy array, where n is number of samples and p is the number of features.
+        y: n x 1 numpy array, the true labels.
+        kfold: number of folds for cross validation.
     Return:
-        weights: Dx1 numpy array, the weights of adaptive lasso
+        weights: dx1 numpy array, the weights of lasso.
+    """
+    return None
+
+
+def elastic_net_cv(X, y, nfold=5):
+    """
+    Args:
+        X: n x p numpy array, where n is number of instances and p is the number of features.
+        y: n x 1 numpy array, the true labels.
+        kfold: number of folds for cross validation.
+    Return:
+        weights: dx1 numpy array, the weights of elastic-net.
+    """
+    return None
+
+
+def adaptive_lasso(X, y, kfold=5, penalty=None):
+    """
+    Args:
+        X: n x d numpy array, where n is number of instances and p is the number of features.
+        y: n x 1 numpy array, the true labels.
+        kfold: number of folds for cross validation.
+        penalty: precomputed penalty factor.
+    Return:
+        weights: dx1 numpy array, the weights of adaptive lasso.
     """
     return None

@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn import linear_model
 
 def main():
-    # Testing Globals
+    # Globals for Testing Lasso and Random Lasso.
     tests = 1
     start_samples = 50
     start_features = 100
@@ -21,11 +21,11 @@ def main():
                                              n_informative=start_informative, coef=True)
         print("Ground Truth:\n", ground_truth.T)
 
-        # Testing Pure Lasso
+        # Testing Lasso
         reg = linear_model.LassoCV().fit(x, y)
-        print("Pure Lasso Prediction:\n", reg.coef_)
+        print("Lasso Prediction:\n", reg.coef_)
         rmse_t = mean_squared_error(reg.coef_, ground_truth)
-        print("Pure Lasso RME: ", rmse_t)
+        print("Lasso RME: ", rmse_t)
 
         # Testing and Timing Random Lasso
         start_time = time.time()
