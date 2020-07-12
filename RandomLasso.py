@@ -95,7 +95,7 @@ def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None, cores=1):
         norm_y = new_y - np.mean(new_y)  # NV
 
         norm_x = new_x - np.mean(new_x, axis=0)[np.newaxis, :]
-        scaled_x = np.sqrt(np.sum(norm_x ** 2, axis=0))  # NV
+        scaled_x = np.sqrt(np.sum(norm_x ** 2, axis=0)) + 2.2e-308  # NV
         norm_x = norm_x / scaled_x[np.newaxis, :]  # NV
 
         # Running some flavor of regression. Uses k-fold cross validation to tune hyper-parameter.

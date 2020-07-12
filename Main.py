@@ -1,16 +1,18 @@
 from RandomLasso import random_lasso
+from RegressionHelpers import adaptive_lasso
 import numpy as np
 import time
 from sklearn.datasets import make_regression
 from sklearn.metrics import mean_squared_error
 from sklearn import linear_model
 
+
 def main():
     # Globals for Testing Lasso and Random Lasso.
     tests = 1
-    start_samples = 200
-    start_features = 500
-    start_informative = 3
+    start_samples = 10
+    start_features = 50
+    start_informative = 2
 
     rme = np.zeros(tests)
     rme_t = np.zeros(tests)
@@ -32,6 +34,12 @@ def main():
         print("Lasso Prediction:\n", reg.coef_)
         rme_t[ii] = mean_squared_error(reg.coef_, ground_truth)
         print("Lasso RME: ", rme_t[ii])
+
+        # Testing Adaptive Lasso
+        weights = adaptive_lasso(X, y)
+        print("Adaptive Lasso Prediction:\n", weights)
+        rme_t2 = mean_squared_error(weights, ground_truth)
+        print("Adaptive Lasso RME: ", rme_t2)
 
         # Testing and Timing Random Lasso
         start_time = time.time()
