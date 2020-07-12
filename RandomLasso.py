@@ -17,6 +17,7 @@ regression techniques as the ratio of features to samples increases.
 
 import numpy as np
 from sklearn import linear_model
+from sklearn.preprocessing import scale
 
 
 def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], sample_size=None,
@@ -79,12 +80,14 @@ def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None):
 
         # Standardizing the new X and y.
         norm_y = (new_y - np.mean(new_y))  # NV
-        std_x = np.std(new_x, axis=0)  # NV
-        norm_x = (new_x - np.mean(new_x, axis=0)) / std_x  # NV
+
+        norm_x = (new_x - np.mean(new_x, axis=0))
+        scaled_x = np.sqrt(np.sum(norm_x ** 2, axis=0))  # NV
+        norm_x = norm_x / scaled_x  # NV
 
         # Running some flavor of regression. Uses k-fold cross validation to tune hyper-parameter.
-        reg = linear_model.LassoCV(fit_intercept=False).fit(norm_x, norm_y)  # BUG HERE: "ConvergenceWarning"
+        reg = linear_model.LassoCV(normalize=False, fit_intercept=False).fit(norm_x, norm_y)  # BUG HERE: "ConvergenceWarning"
         # Adding to large bootstrap matrix. Will get the sum of each column later.
-        bootstrap_matrix[ii, random_features] = reg.coef_ / std_x  # Valid
+        bootstrap_matrix[ii, random_features] = reg.coef_ / scaled_x  # Valid
 
     return bootstrap_matrix
