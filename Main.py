@@ -8,12 +8,12 @@ from sklearn import linear_model
 def main():
     # Globals for Testing Lasso and Random Lasso.
     tests = 1
-    start_samples = 20
-    start_features = 50
+    start_samples = 200
+    start_features = 500
     start_informative = 3
 
-    rmse = np.zeros(tests)
-    rmse_t = np.zeros(tests)
+    rme = np.zeros(tests)
+    rme_t = np.zeros(tests)
 
     for ii in range(tests):
         # Simulating Data
@@ -30,16 +30,16 @@ def main():
         # Testing Lasso
         reg = linear_model.LassoCV().fit(X, y)
         print("Lasso Prediction:\n", reg.coef_)
-        rmse_t[ii] = mean_squared_error(reg.coef_, ground_truth)
-        print("Lasso RME: ", rmse_t[ii])
+        rme_t[ii] = mean_squared_error(reg.coef_, ground_truth)
+        print("Lasso RME: ", rme_t[ii])
 
         # Testing and Timing Random Lasso
         start_time = time.time()
-        weights = random_lasso(X, y, expected_sampling=40, suppress_warnings=True)
+        weights = random_lasso(X, y, expected_sampling=40, suppress_warnings=True, cores=1)
         print("--- %s seconds ---" % (time.time() - start_time))
         print("Random Lasso Prediction:\n", weights)
-        rmse[ii] = mean_squared_error(weights, ground_truth)
-        print("Random Lasso RME:", rmse[ii])
+        rme[ii] = mean_squared_error(weights, ground_truth)
+        print("Random Lasso RME:", rme[ii])
 
     # print("Lasso RMSE:", rmse_t)
     # print("Random Lasso RMSE:", rmse)

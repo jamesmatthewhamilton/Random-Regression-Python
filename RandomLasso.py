@@ -7,10 +7,11 @@ regression techniques as the ratio of features to samples increases.
 :param x
 :param y
 :param bootstraps
-:param expected_sampling
+:param expected_sampling Expected times each feature will be sampled. Parameter bootstraps overrides this.
 :param alpha
 :param sample_size
 :param kfold
+:param cores Number of cores to run with sklearn. Set to -1 to use all cores.
 :param supress_warnings
 :param verbose
 :return: weights
@@ -21,8 +22,10 @@ from sklearn import linear_model
 from sklearn.preprocessing import scale
 
 
-def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], sample_size=None,
-                 kfold=None, verbose=True, suppress_warnings=True, verbose_output=True):
+def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=np.array([1, 1]),
+                 sample_size=None, kfold=None, verbose=True, cores=1, suppress_warnings=True,
+                 verbose_output=True):
+
     number_of_samples = X.shape[0]
     number_of_features = X.shape[1]
 
@@ -49,7 +52,7 @@ def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], samp
         suppress_convergence_warnings()
 
     print(" ------ PART 1 ------ ")
-    bootstrap_matrix = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size)
+    bootstrap_matrix = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size, cores=cores)
     weights = np.sum(np.abs(bootstrap_matrix), axis=0)
     probability_distribution = weights / np.sum(weights)
 
@@ -62,7 +65,7 @@ def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], samp
     return weights
 
 
-def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None):
+def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None, cores=1):
     number_of_samples = X.shape[0]
     number_of_features = X.shape[1]
 
@@ -89,7 +92,7 @@ def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None):
         norm_x = norm_x / scaled_x  # NV
 
         # Running some flavor of regression. Uses k-fold cross validation to tune hyper-parameter.
-        reg = linear_model.LassoCV(normalize=False, fit_intercept=False).fit(norm_x, norm_y)  # BUG HERE: "ConvergenceWarning"
+        reg = linear_model.LassoCV(normalize=False, fit_intercept=False, n_jobs=cores).fit(norm_x, norm_y)  # BUG HERE: "ConvergenceWarning"
         # Adding to large bootstrap matrix. Will get the sum of each column later.
         bootstrap_matrix[ii, random_features] = reg.coef_ / scaled_x  # Valid
 
