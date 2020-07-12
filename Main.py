@@ -35,7 +35,7 @@ def main():
 
         # Testing and Timing Random Lasso
         start_time = time.time()
-        weights = random_lasso(X, y, expected_sampling=40, suppress_warnings=True, cores=1)
+        weights = random_lasso(X, y, expected_sampling=40, suppress_warnings=True)
         print("--- %s seconds ---" % (time.time() - start_time))
         print("Random Lasso Prediction:\n", weights)
         rme[ii] = mean_squared_error(weights, ground_truth)

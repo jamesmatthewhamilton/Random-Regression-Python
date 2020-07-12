@@ -23,7 +23,7 @@ from sklearn.preprocessing import scale
 
 
 def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=np.array([1, 1]),
-                 sample_size=None, kfold=None, verbose=True, cores=1, suppress_warnings=True,
+                 sample_size=None, kfold=None, verbose=True, cores=None, suppress_warnings=True,
                  verbose_output=True):
 
     number_of_samples = X.shape[0]
@@ -48,6 +48,13 @@ def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=np.array([1,
     # Setting sample size when user does not specify.
     if sample_size is None:
         sample_size = number_of_samples
+    if cores is None:
+        if number_of_features >= 400:
+            print("[Info] Decided to used parallel computing.")
+            cores = -1
+        else:
+            print("[Info] Decided not to use parallel computing, as X is relatively small.")
+            cores = 1
     if suppress_warnings is True:
         suppress_convergence_warnings()
 
@@ -85,11 +92,11 @@ def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None, cores=1):
         new_y = y[shuffled_samples]  # Valid
 
         # Standardizing the new X and y.
-        norm_y = (new_y - np.mean(new_y))  # NV
+        norm_y = new_y - np.mean(new_y)  # NV
 
-        norm_x = (new_x - np.mean(new_x, axis=0))
+        norm_x = new_x - np.mean(new_x, axis=0)[np.newaxis, :]
         scaled_x = np.sqrt(np.sum(norm_x ** 2, axis=0))  # NV
-        norm_x = norm_x / scaled_x  # NV
+        norm_x = norm_x / scaled_x[np.newaxis, :]  # NV
 
         # Running some flavor of regression. Uses k-fold cross validation to tune hyper-parameter.
         reg = linear_model.LassoCV(normalize=False, fit_intercept=False, n_jobs=cores).fit(norm_x, norm_y)  # BUG HERE: "ConvergenceWarning"
