@@ -12,18 +12,12 @@ def main():
     start_features = 50
     start_informative = 3
 
-    if True:
-        # Temporarily turning off Convergence Warnings
-        import warnings
-        from sklearn.exceptions import ConvergenceWarning
-        warnings.filterwarnings(action='ignore', category=ConvergenceWarning)
-
     rmse = np.zeros(tests)
     rmse_t = np.zeros(tests)
 
     for ii in range(tests):
         # Simulating Data
-        X, y, ground_truth = make_regression(n_samples=start_samples, n_features=start_features, #* (ii + 1),
+        X, y, ground_truth = make_regression(n_samples=start_samples, n_features=start_features,
                                              n_informative=start_informative, coef=True)
 
         # Sorting features by their importance. Most important feature in X[:, 0].
@@ -41,14 +35,14 @@ def main():
 
         # Testing and Timing Random Lasso
         start_time = time.time()
-        weights = random_lasso(X, y, expected_sampling=40)
+        weights = random_lasso(X, y, expected_sampling=40, suppress_warnings=True)
         print("--- %s seconds ---" % (time.time() - start_time))
         print("Random Lasso Prediction:\n", weights)
         rmse[ii] = mean_squared_error(weights, ground_truth)
         print("Random Lasso RME:", rmse[ii])
 
-    print("Lasso RMSE:", rmse_t)
-    print("Random Lasso RMSE:", rmse)
+    # print("Lasso RMSE:", rmse_t)
+    # print("Random Lasso RMSE:", rmse)
 
 
 if __name__ == "__main__":

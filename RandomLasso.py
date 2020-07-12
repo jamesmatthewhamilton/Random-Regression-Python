@@ -7,10 +7,11 @@ regression techniques as the ratio of features to samples increases.
 :param x
 :param y
 :param bootstraps
-:param sample
+:param expected_sampling
 :param alpha
 :param sample_size
-:param nfold
+:param kfold
+:param supress_warnings
 :param verbose
 :return: weights
 """
@@ -21,7 +22,7 @@ from sklearn.preprocessing import scale
 
 
 def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], sample_size=None,
-                 nfold=None, verbose=True, verbose_output=True):
+                 kfold=None, verbose=True, suppress_warnings=True, verbose_output=True):
     number_of_samples = X.shape[0]
     number_of_features = X.shape[1]
 
@@ -44,6 +45,8 @@ def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=[1, 1], samp
     # Setting sample size when user does not specify.
     if sample_size is None:
         sample_size = number_of_samples
+    if suppress_warnings is True:
+        suppress_convergence_warnings()
 
     print(" ------ PART 1 ------ ")
     bootstrap_matrix = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size)
@@ -91,3 +94,11 @@ def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None):
         bootstrap_matrix[ii, random_features] = reg.coef_ / scaled_x  # Valid
 
     return bootstrap_matrix
+
+
+# Depreciating...
+def suppress_convergence_warnings():
+    # Temporarily turning off convergence warnings.
+    import warnings
+    from sklearn.exceptions import ConvergenceWarning
+    warnings.filterwarnings(action='ignore', category=ConvergenceWarning)
