@@ -6,6 +6,10 @@ from sklearn.datasets import make_regression
 from sklearn.metrics import mean_squared_error
 from sklearn import linear_model
 
+'''
+Main.py: A sandbox for informal testing. Not maintained or critical.
+         Formal tests belong in RegressionTests.py or the Jupyter Notebook.
+'''
 
 def main():
     # Globals for Testing Lasso and Random Lasso.

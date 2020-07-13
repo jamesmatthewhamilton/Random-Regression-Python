@@ -38,7 +38,7 @@ def elastic_net_cv(X, y, nfold=5):
     return None
 
 
-def adaptive_lasso(X, y, kfold=5, adaptive_iterations=5, penalty=None, cores=1):
+def adaptive_lasso(X, y, nfold=5, adaptive_iterations=5, penalty=None, cores=1):
     """
     Args:
         X: n x d numpy array, where n is number of instances and p is the number of features.
@@ -51,18 +51,16 @@ def adaptive_lasso(X, y, kfold=5, adaptive_iterations=5, penalty=None, cores=1):
     """
     if penalty is None:
         # Initializing penalty with weights from Ridge Regression.
-        res_ridge = linear_model.RidgeCV(normalize=False, fit_intercept=False,
-                                         kfold=kfold).fit(X, y)
+        res_ridge = linear_model.RidgeCV(normalize=False, fit_intercept=False).fit(X, y)
         weights = res_ridge.coef_
     else:
         weights = penalty
 
     for ii in range(adaptive_iterations):
-        print("[Info] Adaptive Lasso on iteration ", ii + 1, " of ", adaptive_iterations, ".", sep='')
+        #print("[Info] Adaptive Lasso on iteration ", ii + 1, " of ", adaptive_iterations, ".", sep='')
         penalty = adaptive_penalty(weights)
         X_new = X / penalty[np.newaxis, :]
-        res = linear_model.LassoCV(normalize=False, fit_intercept=False,
-                                   kfold=kfold, n_jobs=cores).fit(X_new, y)
+        res = linear_model.LassoCV(normalize=False, fit_intercept=False, n_jobs=cores).fit(X_new, y)
         weights = res.coef_ / penalty
 
     return weights
