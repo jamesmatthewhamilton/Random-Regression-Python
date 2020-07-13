@@ -19,7 +19,9 @@ regression techniques as the ratio of features to samples increases.
 
 import numpy as np
 from sklearn import linear_model
-from sklearn.preprocessing import scale
+import time
+from tqdm import tqdm  # Progress Bar
+
 
 
 def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=np.array([1, 1]),
@@ -58,12 +60,12 @@ def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=np.array([1,
     if suppress_warnings is True:
         suppress_convergence_warnings()
 
-    print(" ------ PART 1 ------ ")
+    print(" ------ PART 1 of 2 ------ ")
     bootstrap_matrix = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size, cores=cores)
     weights = np.sum(np.abs(bootstrap_matrix), axis=0)
     probability_distribution = weights / np.sum(weights)
 
-    print(" ------ PART 2 ------ ")
+    print(" ------ PART 2 of 2 ------ ")
     # Using the results of the weights from Part 1 in our random sampling.
     weights = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size,
                            probabilities=probability_distribution)
@@ -80,7 +82,7 @@ def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None, cores=1):
     all_sample_indices = np.arange(number_of_samples)  # 0, 1, 2, ... #samples
     bootstrap_matrix = np.zeros((bootstraps, number_of_features))  # (bootstraps x features)
 
-    for ii in range(bootstraps):
+    for ii in tqdm(range(bootstraps)):
         # Randomly sampling sample_size number of feature indices.
         random_features = np.random.choice(all_feature_indices, size=sample_size, replace=False, p=probabilities)
         # Randomly shuffling and duplicating sample_size number of sample indices.
