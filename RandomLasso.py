@@ -101,7 +101,7 @@ def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None, cores=1):
         norm_x = norm_x / scaled_x[np.newaxis, :]  # NV
 
         # Running some flavor of regression. Uses k-fold cross validation to tune hyper-parameter.
-        reg = linear_model.LassoCV(normalize=False, fit_intercept=False, n_jobs=cores).fit(norm_x, norm_y)  # BUG HERE: "ConvergenceWarning"
+        reg = linear_model.LassoCV(normalize=False, fit_intercept=False, n_jobs=cores).fit(norm_x, norm_y)
         # Adding to large bootstrap matrix. Will get the sum of each column later.
         bootstrap_matrix[ii, random_features] = reg.coef_ / scaled_x  # Valid
 
