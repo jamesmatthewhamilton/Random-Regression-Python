@@ -13,6 +13,7 @@ regression techniques as the ratio of features to samples increases.
 :param kfold
 :param cores Number of cores to run with sklearn. Set to -1 to use all cores.
 :param supress_warnings
+:param ground_truth Enhances verbose output when verbose=True.
 :param verbose
 :return: weights
 """
@@ -23,10 +24,9 @@ import time
 from tqdm import tqdm  # Progress Bar
 
 
-
 def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=np.array([1, 1]),
-                 sample_size=None, kfold=None, verbose=True, cores=None, suppress_warnings=True,
-                 verbose_output=True):
+                 sample_size=None, kfold=None, verbose=False, cores=None, suppress_warnings=True,
+                 ground_truth=None, verbose_output=True):
 
     number_of_samples = X.shape[0]
     number_of_features = X.shape[1]
@@ -61,20 +61,21 @@ def random_lasso(X, y, bootstraps=None, expected_sampling=40, alpha=np.array([1,
         suppress_convergence_warnings()
 
     print(" ------ PART 1 of 2 ------ ")
-    bootstrap_matrix = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size, cores=cores)
+    bootstrap_matrix = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size,
+                                    ground_truth=ground_truth, verbose=verbose, cores=cores)
     weights = np.sum(np.abs(bootstrap_matrix), axis=0)
     probability_distribution = weights / np.sum(weights)
 
     print(" ------ PART 2 of 2 ------ ")
     # Using the results of the weights from Part 1 in our random sampling.
-    weights = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size,
-                           probabilities=probability_distribution)
+    weights = bootstrap_Xy(X, y, bootstraps=bootstraps, sample_size=sample_size, verbose=verbose,
+                           probabilities=probability_distribution, ground_truth=ground_truth, cores=cores)
     weights = np.sum(weights, axis=0) / bootstraps
 
     return weights
 
 
-def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None, cores=1):
+def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None, ground_truth=None, verbose=False, cores=1):
     number_of_samples = X.shape[0]
     number_of_features = X.shape[1]
 
@@ -88,20 +89,29 @@ def bootstrap_Xy(X, y, bootstraps, sample_size, probabilities=None, cores=1):
         # Randomly shuffling and duplicating sample_size number of sample indices.
         shuffled_samples = np.random.choice(all_sample_indices, size=sample_size, replace=True)
 
-        # Generating a new X and y based on the above random indices.
+        #  Generating a new X and y based on the above random indices.
         new_x = X[:, random_features]  # Valid
         new_x = new_x[shuffled_samples, :]  # Valid
         new_y = y[shuffled_samples]  # Valid
 
-        # Standardizing the new X and y.
+        # Re-centering and Re-standardizing the new X and y.
         norm_y = new_y - np.mean(new_y)  # NV
 
-        norm_x = new_x - np.mean(new_x, axis=0)[np.newaxis, :]
+        norm_x = new_x - np.mean(new_x, axis=0)[np.newaxis, :]  # NV
         scaled_x = np.sqrt(np.sum(norm_x ** 2, axis=0)) + 2.2e-308  # NV
         norm_x = norm_x / scaled_x[np.newaxis, :]  # NV
 
         # Running some flavor of regression. Uses k-fold cross validation to tune hyper-parameter.
         reg = linear_model.LassoCV(normalize=False, fit_intercept=False, n_jobs=cores).fit(norm_x, norm_y)
+
+        if verbose:
+            if ground_truth is None:
+                print("[Bootstrap Feature Indices, Resulting Coefficients]:\n",
+                      np.array([random_features, reg.coef_]).T)
+            else:
+                print("[Ground Truth, Bootstrap Feature Indices, Resulting Coefficients]:\n",
+                      np.array([ground_truth[random_features], random_features, reg.coef_]).T)
+
         # Adding to large bootstrap matrix. Will get the sum of each column later.
         bootstrap_matrix[ii, random_features] = reg.coef_ / scaled_x  # Valid
 

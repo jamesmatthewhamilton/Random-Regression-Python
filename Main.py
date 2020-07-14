@@ -5,6 +5,7 @@ import time
 from sklearn.datasets import make_regression
 from sklearn.metrics import mean_squared_error
 from sklearn import linear_model
+from sklearn.preprocessing import scale
 
 '''
 Main.py: A sandbox for informal testing. Not maintained or critical.
@@ -14,9 +15,9 @@ Main.py: A sandbox for informal testing. Not maintained or critical.
 def main():
     # Globals for Testing Lasso and Random Lasso.
     tests = 1
-    start_samples = 10
-    start_features = 50
-    start_informative = 2
+    start_samples = 50
+    start_features = 100
+    start_informative = 10
 
     rme = np.zeros(tests)
     rme_t = np.zeros(tests)
@@ -47,14 +48,12 @@ def main():
 
         # Testing and Timing Random Lasso
         start_time = time.time()
-        weights = random_lasso(X, y, expected_sampling=40, suppress_warnings=True)
+        weights = random_lasso(X, y, expected_sampling=40, suppress_warnings=True,
+                               ground_truth=ground_truth, verbose=False)
         print("--- %s seconds ---" % (time.time() - start_time))
         print("Random Lasso Prediction:\n", weights)
         rme[ii] = mean_squared_error(weights, ground_truth)
         print("Random Lasso RME:", rme[ii])
-
-    # print("Lasso RMSE:", rmse_t)
-    # print("Random Lasso RMSE:", rmse)
 
 
 if __name__ == "__main__":
