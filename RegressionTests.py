@@ -96,21 +96,23 @@ def supermassive_regression_test(tests,
 
 def supermassive_regression_plot(title, xlabel, ylabel, footnote, xdata,
                                  ydata, legend, legend_loc="upper right", log=True):
-    plt.figure(figsize=(16, 9), dpi=70, facecolor='w', edgecolor='k')
 
-    if log:
-        plt.yscale('log')
-    colors = ['y', 'b', 'r', 'g', 'm', 'c']
     for ii in range(ydata.shape[0]):
-        plt.plot(xdata, ydata[ii], label=legend[ii], color=colors[ii % len(colors)])
+        plt.figure(figsize=(16, 9), dpi=70, facecolor='w', edgecolor='k')
 
-    plt.legend(loc=legend_loc)
-    plt.ylabel(ylabel)
-    plt.xlabel(xlabel)
-    plt.title(title)
-    plt.figtext(0.5, 0.05, footnote, ha="center", fontsize=10)
+        if log:
+            plt.yscale('log')
+        colors = ['y', 'b', 'r', 'g', 'm', 'c']
+        for jj in range(ydata.shape[1]):
+            plt.plot(xdata, ydata[ii, jj], label=legend[jj], color=colors[jj % len(colors)])
 
-    plt.show()
+        plt.legend(loc=legend_loc[ii])
+        plt.ylabel(ylabel[ii])
+        plt.xlabel(xlabel)
+        plt.title(title)
+        plt.figtext(0.5, 0.05, footnote, ha="center", fontsize=10)
+
+        plt.show()
 
 
 def bulk_analysis_regression(coef_true, coef_pred, method, start_time=None, verbose=False):
