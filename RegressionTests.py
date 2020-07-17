@@ -141,3 +141,50 @@ def feature_selection_f1_score(coef_true, coef_pred):
     binary_coef_pred = np.where(coef_pred != 0, 1, 0)
     binary_coef_true = np.where(coef_true != 0, 1, 0)
     return f1_score(binary_coef_true, binary_coef_pred)
+
+
+def root_mean_sq_error(y_true, y_pred):
+    return np.sqrt(np.mean((y_true - y_pred) ** 2))
+
+
+def predict(xtest, weight):
+    N = xtest.shape[0]
+    prediction = np.zeros((N, 1))
+    prediction[:, 0] = np.sum(xtest * weight.T, axis=1)
+    np.shape(prediction.shape)
+    return prediction
+
+
+def cross_validation(X, y, method, kfold=10, l1_ratio=0.5):
+    N = X.shape[0]
+    rmse_error = np.zeros(kfold)
+    all_indices = np.arange(N)
+    bag_of_indices = all_indices
+    amount_to_sample = np.int(np.floor((1 / kfold) * N))
+    for ii in range(kfold):
+        test_index = np.random.choice(bag_of_indices, amount_to_sample, replace=False)
+        for jj in range(len(test_index)):
+            bag_of_indices = np.delete(bag_of_indices, np.where(bag_of_indices == test_index[jj]), axis=0)
+        train_index = np.delete(all_indices, test_index)
+        x_train = X[train_index, :]
+        y_train = y[train_index]
+        if method == "ols":
+            reg = linear_model.LinearRegression().fit(x_train, y_train)
+            coef = reg.coef_
+        if method == "ridge":
+            reg = linear_model.RidgeCV().fit(x_train, y_train)
+            coef = reg.coef_
+        if method == "elastic":
+            reg = linear_model.ElasticNetCV(n_jobs=-1, l1_ratio=l1_ratio).fit(x_train, y_train)
+            coef = reg.coef_
+        if method == "lasso":
+            reg = linear_model.LassoCV(n_jobs=-1).fit(x_train, y_train)
+            coef = reg.coef_
+        if method == "adaptive":
+            coef = adaptive_lasso(x_train, y_train)
+        x_test = X[test_index, :]
+        y_test = y[test_index]
+        prediction = predict(x_test, coef)
+        rmse_error[ii] = root_mean_sq_error(prediction, y_test)
+    return np.mean(rmse_error)
+
