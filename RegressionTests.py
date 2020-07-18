@@ -16,16 +16,19 @@ def supermassive_regression_test(tests,
                                  sample_scale_function,
                                  feature_scale_function,
                                  informative_scale_function,
+                                 hard_coded_tests=None,
                                  verbose=False):
 
     samples = np.full(tests, sample_start)
     features = np.full(tests, feature_start)
     informative = np.full(tests, informative_start)
-    hard_coded_tests = np.array(["Least Squares", "Ridge", "Elastic-net", "Lasso", "Adaptive"])
+    if hard_coded_tests is None:
+        hard_coded_tests = np.array(["Least Squares", "Ridge", "Elastic-net L1=0.2",  "Elastic-net L1=0.5",
+                                     "Elastic-net L1=0.8", "Lasso", "Adaptive"])
 
-    rme = np.zeros((5, tests))
-    f1 = np.zeros((5, tests))
-    runtime = np.zeros((5, tests))
+    rme = np.zeros((7, tests))
+    f1 = np.zeros((7, tests))
+    runtime = np.zeros((7, tests))
 
     for ii in tqdm(range(tests)):
         if verbose:
@@ -53,6 +56,7 @@ def supermassive_regression_test(tests,
         X, y, ground_truth = make_regression(n_samples=samples[ii],
                                              n_features=features[ii],
                                              n_informative=informative[ii],
+                                             noise=0.5,
                                              coef=True)
 
         # Sorting features by their importance. Most important feature in X[:, 0].
@@ -60,51 +64,77 @@ def supermassive_regression_test(tests,
         ground_truth = ground_truth[sorted_indices]
         X = X[:, sorted_indices]
 
-        # Testing Least Squares
-        start_time = time.time()
-        reg = linear_model.LinearRegression().fit(X, y)
-        rme[0, ii], f1[0, ii], runtime[0, ii] = \
-            bulk_analysis_regression(ground_truth, reg.coef_, "LS", start_time)
+        for jj in range(len(hard_coded_tests)):
 
-        # Testing Ridge
-        start_time = time.time()
-        reg = linear_model.RidgeCV().fit(X, y)
-        rme[1, ii], f1[1, ii], runtime[1, ii] = \
-            bulk_analysis_regression(ground_truth, reg.coef_, "Ridge", start_time)
+            # Testing Least Squares
+            if (np.any(hard_coded_tests[jj] == "Least Squares")):
+                start_time = time.time()
+                reg = linear_model.LinearRegression().fit(X, y)
+                rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
+                    bulk_analysis_regression(ground_truth, reg.coef_, hard_coded_tests[jj], start_time)
 
-        # Testing Elastic Net
-        start_time = time.time()
-        reg = linear_model.ElasticNetCV().fit(X, y)
-        rme[2, ii], f1[2, ii], runtime[2, ii] = \
-            bulk_analysis_regression(ground_truth, reg.coef_, "Elastic", start_time)
+            # Testing Ridge
+            if (np.any(hard_coded_tests[jj] == "Ridge")):
+                start_time = time.time()
+                reg = linear_model.RidgeCV().fit(X, y)
+                rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
+                    bulk_analysis_regression(ground_truth, reg.coef_, hard_coded_tests[jj], start_time)
 
-        # Testing Lasso
-        start_time = time.time()
-        reg = linear_model.LassoCV(n_jobs=cores).fit(X, y)
-        rme[3, ii], f1[3, ii], runtime[3, ii] = \
-            bulk_analysis_regression(ground_truth, reg.coef_, "Lasso", start_time)
+            # Testing Elastic Net L1=0.2
+            if (np.any(hard_coded_tests[jj] == "Elastic-net L1=0.2")):
+                start_time = time.time()
+                reg = linear_model.ElasticNetCV(l1_ratio=0.2).fit(X, y)
+                rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
+                    bulk_analysis_regression(ground_truth, reg.coef_, hard_coded_tests[jj], start_time)
 
-        # Testing Adaptive
-        start_time = time.time()
-        coef = adaptive_lasso(X, y)
-        rme[4, ii], f1[4, ii], runtime[4, ii] = \
-            bulk_analysis_regression(ground_truth, coef, "Adaptive", start_time)
+            # Testing Elastic Net L1=0.5
+            if (np.any(hard_coded_tests[jj] == "Elastic-net L1=0.5")):
+                start_time = time.time()
+                reg = linear_model.ElasticNetCV(l1_ratio=0.5).fit(X, y)
+                rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
+                    bulk_analysis_regression(ground_truth, reg.coef_, hard_coded_tests[jj], start_time)
+
+            # Testing Elastic Net L1=0.8
+            if (np.any(hard_coded_tests[jj] == "Elastic-net L1=0.8")):
+                start_time = time.time()
+                reg = linear_model.ElasticNetCV(l1_ratio=0.8).fit(X, y)
+                rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
+                    bulk_analysis_regression(ground_truth, reg.coef_, hard_coded_tests[jj], start_time)
+
+            # Testing Lasso
+            if (np.any(hard_coded_tests[jj] == "Lasso")):
+                start_time = time.time()
+                reg = linear_model.LassoCV(n_jobs=cores).fit(X, y)
+                rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
+                    bulk_analysis_regression(ground_truth, reg.coef_, hard_coded_tests[jj], start_time)
+
+            # Testing Adaptive
+            if (np.any(hard_coded_tests[jj] == "Adaptive")):
+                start_time = time.time()
+                coef = adaptive_lasso(X, y)
+                rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
+                    bulk_analysis_regression(ground_truth, coef, hard_coded_tests[jj], start_time)
 
     sfi = np.array([samples, features, informative])
     return rme, f1, runtime, sfi, hard_coded_tests
 
 
 def supermassive_regression_plot(title, xlabel, ylabel, footnote, xdata,
-                                 ydata, legend, legend_loc="upper right", log=True):
+                                 ydata, legend, legend_loc="upper right",
+                                 colors=None, lines=None, log=True):
 
     for ii in range(ydata.shape[0]):
         plt.figure(figsize=(16, 9), dpi=70, facecolor='w', edgecolor='k')
 
         if log:
             plt.yscale('log')
-        colors = ['y', 'b', 'r', 'g', 'm', 'c']
+        if colors == None:
+            colors = ['y', 'b', 'r', 'g', 'm', 'c']
+        if lines == None:
+            lines = ['-']
+
         for jj in range(ydata.shape[1]):
-            plt.plot(xdata, ydata[ii, jj], label=legend[jj], color=colors[jj % len(colors)])
+            plt.plot(xdata, ydata[ii, jj], lines[jj % len(lines)], label=legend[jj], color=colors[jj % len(colors)])
 
         plt.legend(loc=legend_loc[ii])
         plt.ylabel(ylabel[ii])
