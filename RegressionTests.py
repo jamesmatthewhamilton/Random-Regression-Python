@@ -13,22 +13,51 @@ def supermassive_regression_test(tests,
                                  sample_start,
                                  feature_start,
                                  informative_start,
-                                 sample_scale_function,
-                                 feature_scale_function,
-                                 informative_scale_function,
+                                 noise_start=0.0,
+                                 effective_rank_start=None,
+                                 sample_scale_function=None,
+                                 feature_scale_function=None,
+                                 informative_scale_function=None,
+                                 noise_scale_function=None,
+                                 effective_rank_scale_function=None,
                                  hard_coded_tests=None,
                                  verbose=False):
+
+    assert (isinstance(sample_start, int))
+    assert (isinstance(feature_start, int))
+    assert (isinstance(informative_start, int))
+    if noise_start is not None:
+        assert(isinstance(noise_start, float))
+    if effective_rank_start is not None:
+        assert(isinstance(effective_rank_start, int))
 
     samples = np.full(tests, sample_start)
     features = np.full(tests, feature_start)
     informative = np.full(tests, informative_start)
+    noise = np.full(tests, noise_start)
+    effective_rank = np.full(tests, effective_rank_start)
+
     if hard_coded_tests is None:
         hard_coded_tests = np.array(["Least Squares", "Ridge", "Elastic-net L1=0.2",  "Elastic-net L1=0.5",
                                      "Elastic-net L1=0.8", "Lasso", "Adaptive"])
 
-    rme = np.zeros((7, tests))
-    f1 = np.zeros((7, tests))
-    runtime = np.zeros((7, tests))
+    if sample_scale_function is None:
+        def sample_scale_function(x, y, z, ii):
+            return x
+
+    if feature_scale_function is None:
+        def sample_scale_function(x, y, z, ii):
+            return y
+
+    if informative_scale_function is None:
+        def sample_scale_function(x, y, z, ii):
+            return z
+
+    n_methods = len(hard_coded_tests)
+
+    rme = np.zeros((n_methods, tests))
+    f1 = np.zeros((n_methods, tests))
+    runtime = np.zeros((n_methods, tests))
 
     for ii in tqdm(range(tests)):
         if verbose:
@@ -45,18 +74,26 @@ def supermassive_regression_test(tests,
         informative[ii] = np.round(informative_scale_function(samples[ii],
                                                               features[ii],
                                                               informative[ii], ii))
+        if noise_scale_function is not None:
+            noise[ii] = noise_scale_function(noise[ii], ii)
+
+        if effective_rank_scale_function is not None:
+            effective_rank[ii] = effective_rank_scale_function(effective_rank[ii], ii)
 
         cores = (-1 if features[ii] >= 400 else 1)
 
         if verbose:
             print("Samples:", samples[ii],
                   "| Features:", features[ii],
-                  "| Informative:", informative[ii])
+                  "| Informative:", informative[ii],
+                  "| Noise:", noise[ii],
+                  "| Effective Rank", effective_rank[ii])
 
         X, y, ground_truth = make_regression(n_samples=samples[ii],
                                              n_features=features[ii],
                                              n_informative=informative[ii],
-                                             noise=0.5,
+                                             noise=noise[ii],
+                                             effective_rank=effective_rank[ii],
                                              coef=True)
 
         # Sorting features by their importance. Most important feature in X[:, 0].
@@ -64,7 +101,7 @@ def supermassive_regression_test(tests,
         ground_truth = ground_truth[sorted_indices]
         X = X[:, sorted_indices]
 
-        for jj in range(len(hard_coded_tests)):
+        for jj in range(n_methods):
 
             # Testing Least Squares
             if (np.any(hard_coded_tests[jj] == "Least Squares")):
@@ -115,8 +152,8 @@ def supermassive_regression_test(tests,
                 rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
                     bulk_analysis_regression(ground_truth, coef, hard_coded_tests[jj], start_time)
 
-    sfi = np.array([samples, features, informative])
-    return rme, f1, runtime, sfi, hard_coded_tests
+    sfinr = np.array([samples, features, informative, noise, effective_rank], dtype=object)
+    return rme, f1, runtime, sfinr, hard_coded_tests
 
 
 def supermassive_regression_plot(title, xlabel, ylabel, footnote, xdata,
@@ -128,9 +165,9 @@ def supermassive_regression_plot(title, xlabel, ylabel, footnote, xdata,
 
         if log:
             plt.yscale('log')
-        if colors == None:
+        if colors is None:
             colors = ['y', 'b', 'r', 'g', 'm', 'c']
-        if lines == None:
+        if lines is None:
             lines = ['-']
 
         for jj in range(ydata.shape[1]):
