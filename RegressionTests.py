@@ -7,6 +7,7 @@ from sklearn.metrics import f1_score
 from matplotlib import pyplot as plt
 from tqdm import tqdm  # Progress Bar
 from sklearn import linear_model
+from sklearn.decomposition import PCA
 
 
 def supermassive_regression_test(tests,
@@ -59,6 +60,12 @@ def supermassive_regression_test(tests,
     f1 = np.zeros((n_methods, tests))
     runtime = np.zeros((n_methods, tests))
 
+    if np.any(hard_coded_tests == "PCA"):
+        assert len(hard_coded_tests) == 3, \
+            "Currently can only test PCA OR Regression, not both."
+        n_components = np.zeros(tests)
+        noise_variance = np.zeros(tests)
+
     for ii in tqdm(range(tests)):
         if verbose:
             print("------------ Test", ii + 1, "of", tests, "------------")
@@ -83,10 +90,10 @@ def supermassive_regression_test(tests,
         cores = (-1 if features[ii] >= 400 else 1)
 
         if verbose:
-            print("Samples:", samples[ii],
-                  "| Features:", features[ii],
-                  "| Informative:", informative[ii],
-                  "| Noise:", noise[ii],
+            print("Samples:",         samples[ii],
+                  "| Features:",      features[ii],
+                  "| Informative:",   informative[ii],
+                  "| Noise:",         noise[ii],
                   "| Effective Rank", effective_rank[ii])
 
         X, y, ground_truth = make_regression(n_samples=samples[ii],
@@ -152,7 +159,16 @@ def supermassive_regression_test(tests,
                 rme[jj, ii], f1[jj, ii], runtime[jj, ii] = \
                     bulk_analysis_regression(ground_truth, coef, hard_coded_tests[jj], start_time)
 
+            # Testing PCA
+            if (np.any(hard_coded_tests == "PCA")):
+                pca_obj = PCA(n_components=0.99)
+                pca_obj.fit_transform(X)
+                n_components[ii] = pca_obj.n_components_
+                noise_variance[ii] = pca_obj.noise_variance_
+
     sfinr = np.array([samples, features, informative, noise, effective_rank], dtype=object)
+    if (np.any(hard_coded_tests == "PCA")):
+        return n_components, noise_variance, sfinr, hard_coded_tests
     return rme, f1, runtime, sfinr, hard_coded_tests
 
 
