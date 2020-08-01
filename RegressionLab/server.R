@@ -13,6 +13,11 @@ shinyServer(function(input, output, session) {
             sample_start=as.integer(input$samples),
             feature_start=as.integer(input$features),
             informative_start=as.integer(input$informative),
+            noise_start=as.double(input$noise),
+            sample_equation=input$f_samples,
+            feature_equation=input$f_features,
+            informative_equation=input$f_informative,
+            noise_equation=input$f_noise,
             verbose=FALSE
         )
         results
@@ -23,14 +28,12 @@ shinyServer(function(input, output, session) {
 
         p <- ggplot()
         p <- p + ggtitle("Regression Lab Plot")
-        df <- data.frame(y = results[[1]][1, ],
-                         x = unlist(results[[4]][2, ], use.names=FALSE))
-        p <- p + geom_line(data=df, aes(x, y, color=results[[5]][1]))
 
-        for(ii in 2:length(results[[5]])) {
+        for(ii in 1:length(results[[5]])) {
             print(ii)
             df <- data.frame(y = results[[1]][ii, ],
-                             x = unlist(results[[4]][2, ], use.names=FALSE))
+                             x = unlist(results[[4]][as.integer(input$yaxis), ],
+                                        use.names=FALSE))
             p <- p + geom_line(data=cbind(df, col=results[[5]][ii]), aes(x, y, color=col))
             print(results[[5]][ii])
             p <- p + scale_y_log10()
@@ -38,7 +41,13 @@ shinyServer(function(input, output, session) {
         if(input$large_font) {
             p <- p + theme_classic(base_size = 20)
         }
-        p <- p + labs(x="Features", y="Root Mean Error") 
+        if (as.integer(input$yaxis) == '1') {y_axis_label = "Samples"}
+        if (as.integer(input$yaxis) == '2') {y_axis_label = "Features"}
+        if (as.integer(input$yaxis) == '3') {y_axis_label = "Informative"}
+        if (as.integer(input$yaxis) == '4') {y_axis_label = "Noise"}
+        if (as.integer(input$yaxis) == '5') {y_axis_label = "Rank"}
+        
+        p <- p + labs(x=y_axis_label, y="Root Mean Error") 
         p <- p + labs(color='Legend') 
         print(p)
     })
